@@ -17,10 +17,11 @@ export function removeToken() {
   localStorage.removeItem('tankas_token');
 }
 
-async function fetchAPI(endpoint, options = {}) {
+export async function fetchAPI(endpoint, options = {}) {
   const token = getToken();
+  const isFormData = options.body instanceof FormData;
   const headers = {
-    'Content-Type': 'application/json',
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...options.headers,
   };
 
@@ -39,7 +40,13 @@ async function fetchAPI(endpoint, options = {}) {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.detail || `Something went wrong (${response.status} ${response.statusText})`);
+      const detailMessage =
+        typeof data?.detail === 'string'
+          ? data.detail
+          : data?.detail
+          ? JSON.stringify(data.detail)
+          : `Something went wrong (${response.status} ${response.statusText})`;
+      throw new Error(detailMessage);
     }
 
     return data;

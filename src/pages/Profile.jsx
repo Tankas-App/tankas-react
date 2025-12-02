@@ -10,6 +10,7 @@ function Profile() {
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [displayName, setDisplayName] = useState('');
+  const [avatarPreview, setAvatarPreview] = useState(null);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -41,6 +42,7 @@ function Profile() {
       });
       setUser(updatedUser);
       setEditMode(false);
+      localStorage.setItem('tankas_user_updated', Date.now().toString());
     } catch (error) {
       console.error('Failed to save profile:', error);
     } finally {
@@ -57,6 +59,9 @@ function Profile() {
     const file = e.target.files[0];
     if (!file) return;
 
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarPreview(previewUrl);
+
     const formData = new FormData();
     formData.append('file', file);
 
@@ -69,10 +74,20 @@ function Profile() {
         },
       });
       setUser(updatedUser);
+      setAvatarPreview(null);
+      localStorage.setItem('tankas_user_updated', Date.now().toString());
     } catch (error) {
       console.error('Failed to upload avatar:', error);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+    };
+  }, [avatarPreview]);
 
   if (loading || !user || !stats) {
     return <div>Loading...</div>;
@@ -88,7 +103,11 @@ function Profile() {
           </button>
 
           <div className="avatar-container">
-            <img alt="Profile avatar" className="avatar-img" src={user.avatar} />
+            <img
+              alt="Profile avatar"
+              className="avatar-img"
+              src={avatarPreview || user.avatar}
+            />
             <button className="avatar-upload-btn" onClick={() => document.getElementById('avatarInput').click()} title="Change avatar">
               <span className="material-symbols-outlined">camera_alt</span>
             </button>
